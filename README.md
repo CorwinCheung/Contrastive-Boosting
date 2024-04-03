@@ -20,13 +20,13 @@ own paths.
 Other directories:
 
 `german` contains specific scripts and notebooks used in the experiements on
-the German credit data set.
+the German credit data set(predict good or bad for credit).
 
 `adult` contains specific scripts and Jupyter notebooks used in the
-experiments on the Aadult data set.  
+experiments on the Adult data set(predict whether income exceeds $50k/yr based on Census data).  
 
 `compas` contains specific scripts and notebooks used in the experiments on
-the COMPAS data set.
+the COMPAS data set(predicts criminal recidivism rates).
 
 `scripts` contains the files needed for running BuDRO, as well as a few
 other scripts used in data processing.
