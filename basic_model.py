@@ -22,13 +22,21 @@ Plan of Attack
 5. See how accuracy and fairness differs based on naive model, naive model with contrastive pre-trainer, naive model with boosting, and naive model with boosting and CL
 6. MAKE SURE OUR APPROACH IS NOVEL - FIND MORE REASONS TO SEPARATE OUR WORK FROM OTHERS.
 
-Notes for why our approach is novel - existing pdapers in the literature seem to be interested in fairness of CL when used in terms of group fairness metrics, not IF. Additionally, most experiments in the literature only focus on mediums like images or text. We focus on tabular data. Further, we combine it in conjunction with boosting. This is important because CL reduces annotation costs which may make AF research more efficient. The addition of boosting may allow for additional generalizability.
+Notes for why our approach is novel - existing papers in the literature seem to be interested in fairness of CL when used in terms of group fairness metrics, not IF. Additionally, most experiments in the literature only focus on mediums like images or text. We focus on tabular data. Further, we combine it in conjunction with boosting. This is important because CL reduces annotation costs which may make AF research more efficient. The addition of boosting may allow for additional generalizability.
+
+**Updated Plan**
+Last week of project
+1. Get pairs to generate.
+2. Make sure embedder learns properly & LR doesn't predict just 0. Add regular positive and negative pairs.
+3. Test individual fairness.
+4. Add some boosting. Can be perhaps generic or some boosting found in paper.
+5. Repeat for other datasets
 """
 
-# !pip install aif360``
-# import os
-# print(os.popen('which python3').read())
+
 # Package install datasets
+import pandas as pd
+import numpy as np
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -89,20 +97,21 @@ def generate_positive_pairs(data):
     return positive_pairs
 
 def generate_negative_pairs(data, labels, outcome_name):
+    data = data.reset_index()
+    labels = labels.reset_index()
     negative_pairs = []
     outcomes = {}
     for index, row in labels.iterrows():
         outcomes[row[outcome_name]] = outcomes.get(row[outcome_name], [])
         outcomes[row[outcome_name]].append(index)
-
-    for i in outcomes[0][:5]:
-        for j in outcomes[1][:5]:
-            row_i, row_j = data.iloc[i], data.iloc[j]
-            copy_i, copy_j = row_i.copy(), row_j.copy()
-            for attribute in protected:
-                copy_i[attribute] = 1 - row_i[attribute]
-                copy_j[attribute] = 1 - row_j[attribute]
-            negative_pairs.append((copy_i, copy_j, 0)) # 0 indicates negative
+    for index in range(min(len(outcomes[0]), len(outcomes[1]))):
+        i, j = outcomes[0][index], outcomes[1][index]
+        row_i, row_j = data.iloc[i], data.iloc[j]
+        copy_i, copy_j = row_i.copy(), row_j.copy()
+        for attribute in protected:
+            copy_i[attribute] = 1 - row_i[attribute]
+            copy_j[attribute] = 1 - row_j[attribute]
+        negative_pairs.append((copy_i, copy_j, 0)) # 0 indicates negative
 
     return negative_pairs
 
@@ -136,8 +145,6 @@ class SimpleEmbeddingNet(nn.Module):
         super(SimpleEmbeddingNet, self).__init__()
         self.linear = nn.Sequential(
             nn.Linear(input_size, 128),
-            nn.ReLU(),
-            nn.Linear(128,128),
             nn.ReLU(),
             nn.Linear(128, embedding_size)
         )
@@ -299,8 +306,8 @@ elements_printed = 0
 
 for batch_data in train_loader:
     for i in range(len(batch_data)):
-        print(batch_data[0])
-        print(len(batch_data[0]))
+        print(element[0])
+        print(len(element[0]))
         elements_printed += 1
         if elements_printed >= num_elements_to_print:
             break
@@ -320,8 +327,8 @@ disp.plot(ax=ax)
 #Visualizing the embeddings with T-sne
 from sklearn.manifold import TSNE
 tsne = TSNE(n_components=2)
-reduced = tsne.fit_transform(train_embeddings[:200])
-positive = y_train["annual-income"][:200] == 1
+reduced = tsne.fit_transform(train_embeddings[:2000])
+positive = y_train["annual-income"][:2000] == 1
 
 fig, ax = plt.subplots(figsize=(5, 5))
 
